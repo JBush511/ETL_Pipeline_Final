@@ -1,0 +1,165 @@
+#Imports
+
+import glob
+import pandas as pd
+from datetime import datetime
+
+#As the exchange rate fluctuates, we will download the same dataset to make marking simpler. 
+
+
+!wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-PY0221EN-SkillsNetwork/labs/module%206/Lab%20-%20Extract%20Transform%20Load/data/bank_market_cap_1.json
+!wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-PY0221EN-SkillsNetwork/labs/module%206/Lab%20-%20Extract%20Transform%20Load/data/bank_market_cap_2.json
+!wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBMDeveloperSkillsNetwork-PY0221EN-SkillsNetwork/labs/module%206/Final%20Assignment/exchange_rates.csv
+
+
+#Extract
+#JSON Extract Function
+#This function will extract JSON files.
+
+def extract_from_json(file_to_process):
+    dataframe = pd.read_json(file_to_process)
+    return dataframe
+
+#Extract Function
+#Define the extract function that finds JSON file bank_market_cap_1.json and calls the function created above to extract data from them. 
+#Store the data in a pandas dataframe. Use the following list for the columns.
+
+columns=['Name','Market Cap (US$ Billion)']
+market_cap_json_file="bank_market_cap_1.json"
+targetfile = "bank_market_cap_gbp.csv"
+
+def extract(fileName):
+    extracted_data = extract_from_json(fileName)
+    dataframe = pd.DataFrame(extracted_data, columns=columns)
+    
+    return dataframe
+
+#Question 1 Load the file exchange_rates.csv as a dataframe and find the exchange rate for British pounds with the symbol GBP, store it in the variable exchange_rate, you will be asked for the number. Hint: set the parameter index_col to 0.
+
+# Write your code here
+exchange_rate_file="exchange_rates.csv"
+rates= pd.read_csv(exchange_rate_file, index_col=0)
+rates
+#Output:
+#Rates
+#AUD	1.297088
+#BGN	1.608653
+#BRL	5.409196
+#CAD	1.271426
+#CHF	0.886083
+#CNY	6.483139
+#CZK	21.510117
+#DKK	6.119757
+#EUR	0.822504
+#GBP	0.732398
+#HKD	7.752509
+#HRK	6.222652
+#HUF	294.135549
+#IDR	14097.902616
+#ILS	3.281132
+#INR	73.011186
+#ISK	129.133081
+#JPY	103.791742
+#KRW	1105.839776
+#MXN	19.932966
+#MYR	4.043017
+#NOK	8.497121
+#NZD	1.393733
+#PHP	48.070406
+#PLN	3.732933
+#RON	4.008883
+#RUB	74.930827
+#SEK	8.292071
+#SGD	1.328261
+#THB	30.009870
+#TRY	7.418572
+#USD	1.000000
+#ZAR	15.118441
+
+exchange_rate=rates.loc['GBP','Rates']
+exchange_rate
+#Output: 0.7323984208000001
+
+#Transform
+#Using exchange_rate and the exchange_rates.csv file find the exchange rate of USD to GBP. Write a transform function that
+#Changes the Market Cap (US$ Billion) column from USD to GBP
+#Rounds the Market Cap (US$ Billion)` column to 3 decimal places
+#Rename Market Cap (US$ Billion) to Market Cap (GBP$ Billion)
+
+def transform(extracted_datta, exchange_rate):
+    transformed_data = extracted_datta.rename(columns={'Market Cap (US$ Billion)': 'Dollar'})
+    transformed_data['Dollar'] = round(transformed_data.Dollar * exchange_rate, 3)
+    transformed_data = transformed_data.rename(columns={'Dollar': 'Market Cap (GBP$ Billion'})
+    
+    return transformed_data
+    
+#Load
+#Create a function that takes a dataframe and load it to a csv named bank_market_cap_gbp.csv. Make sure to set index to False.
+
+def load(targetfile, data_to_load):
+    data_to_load.to_csv(targetfile)
+
+#Logging Function
+#Write the logging function log to log your data:
+
+def log(message):
+    timestamp_format= '%Y-%H-%d-%H:%M:%S'
+    now= datetime.now()
+    timestamp = now.strftime(timestamp_format)
+    with open("logfile.txt", "a") as f:
+        f.write(timestamp + ',' + message + '\n')
+
+#Running the ETL Process
+#Log the process accordingly using the following "ETL Job Started" and "Extract phase Started"
+
+log("ETL Job Started")
+log("Extract phase Started")
+
+#Extract
+#Question 2 Use the function extract(), and print the first 5 rows, take a screen shot:
+# Call the function here
+# Print the rows here
+extracted_data = extract(market_cap_json_file)
+extracted_data.head(5)
+#Output:
+#Name	Market Cap (US$ Billion)
+#0	JPMorgan Chase	390.934
+#1	Industrial and Commercial Bank of China	345.214
+#2	Bank of America	325.331
+#3	Wells Fargo	308.013
+#4	China Construction Bank	257.399
+
+#Log the data as "Extract phase Ended"
+log("Extract phase Ended")
+
+#Transform
+#Log the following "Transform phase Started"
+log("Transform phase Started")
+
+#Question 3 Use the function transform and print the first 5 rows of the output, take a screen shot:
+# Call the function here
+# Print the first 5 rows here
+transformed_data = transform(extracted_data, exchange_rate)
+transformed_data.head(5)
+#Output:
+#Name	Market Cap (GBP$ Billion
+#0	JPMorgan Chase	286.319
+#1	Industrial and Commercial Bank of China	252.834
+#2	Bank of America	238.272
+#3	Wells Fargo	225.588
+#4	China Construction Bank	188.519
+
+#Log your data "Transform phase Ended"
+log("Transform phase Ended")
+
+#Load
+#Log the following "Load phase Started".
+log("Load phase Started")
+
+#Call the load function
+load(targetfile, transformed_data)
+
+#Log the following "Load phase Ended".
+log("Load phase Ended")
+log("ETL Job Ended")
+
